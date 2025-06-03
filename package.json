@@ -1,0 +1,37 @@
+{
+	"name": "@eslym/svelte5-inertia",
+	"version": "0.0.1",
+	"peerDependencies": {
+		"@inertiajs/core": "^2",
+		"esm-env": ">=1.2.2",
+		"html-escape": ">=2.0.0",
+		"lodash-es": "^4.17.21",
+		"svelte": "^5"
+	},
+	"scripts": {
+		"build": "svelte-package -i src -t",
+		"format": "prettier --write .",
+		"check": "svelte-check",
+		"prepack": "svelte-check && svelte-package -i src -t"
+	},
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"svelte": "./dist/index.svelte"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"devDependencies": {
+		"@sveltejs/package": "^2.3.11",
+		"@types/html-escape": "^2.0.2",
+		"@types/lodash-es": "^4.17.12",
+		"prettier": "^3.5.3",
+		"prettier-plugin-svelte": "^3.4.0",
+		"svelte-check": "^4.2.1",
+		"typescript": "^5"
+	}
+}
