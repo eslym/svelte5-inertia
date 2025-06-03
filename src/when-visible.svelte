@@ -2,6 +2,7 @@
 	import type { SvelteHTMLElements } from 'svelte/elements';
 	import { type ReloadOptions, router } from '@inertiajs/core';
 	import { onMount, type Snippet } from 'svelte';
+	import { BROWSER } from 'esm-env';
 
 	let {
 		children,
@@ -38,35 +39,37 @@
 
 	let fetching = $state(false);
 
-	onMount(() => {
-		const observer = new IntersectionObserver(
-			([entry]) => {
-				if (!entry!.isIntersecting) return;
-				if (!always) observer.disconnect();
-				if (fetching) return;
-				fetching = true;
-				router.reload({
-					...reload,
-					onStart(visit) {
-						fetching = true;
-						reload.onStart?.(visit);
-					},
-					onFinish(page) {
-						fetching = false;
-						loaded = true;
-						reload.onFinish?.(page);
-					}
-				});
-			},
-			{ rootMargin: `${buffer}px` }
-		);
+	if (BROWSER) {
+		onMount(() => {
+			const observer = new IntersectionObserver(
+				([entry]) => {
+					if (!entry!.isIntersecting) return;
+					if (!always) observer.disconnect();
+					if (fetching) return;
+					fetching = true;
+					router.reload({
+						...reload,
+						onStart(visit) {
+							fetching = true;
+							reload.onStart?.(visit);
+						},
+						onFinish(page) {
+							fetching = false;
+							loaded = true;
+							reload.onFinish?.(page);
+						}
+					});
+				},
+				{ rootMargin: `${buffer}px` }
+			);
 
-		observer.observe(element);
+			observer.observe(element);
 
-		return () => {
-			observer.disconnect();
-		};
-	});
+			return () => {
+				observer.disconnect();
+			};
+		});
+	}
 </script>
 
 {#if always || !loaded}
