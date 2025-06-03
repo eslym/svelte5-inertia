@@ -1,6 +1,15 @@
 {
 	"name": "@eslym/svelte5-inertia",
+	"description": "An alternative for `@inertiajs/svelte`.",
 	"version": "0.0.1",
+	"author": {
+		"name": "0nepeop1e",
+		"email": "engshun.lim@gmail.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git@github.com:eslym/svelte5-inertia.git"
+	},
 	"peerDependencies": {
 		"@inertiajs/core": "^2",
 		"esm-env": ">=1.2.2",
