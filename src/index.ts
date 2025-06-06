@@ -4,7 +4,8 @@ import AppComponent, {
 	type ComponentModule,
 	type ComponentResolver,
 	type InertiaAppProps,
-	page
+	usePage,
+	onPageUpdated
 } from './app.svelte';
 import { BROWSER } from 'esm-env';
 
@@ -34,7 +35,7 @@ type CreateInertiaAppOptions = {
 	setup(params: {
 		el: HTMLElement | null;
 		App: typeof AppComponent;
-		props: InertiaAppProps;
+		props: Pick<InertiaAppProps, 'initialComponent' | 'initialPage' | 'resolveComponent'>;
 	}): void | AppComponent | SvelteRenderResult;
 	progress?:
 		| false
@@ -85,4 +86,4 @@ export async function createInertiaApp({
 	}
 }
 
-export { router, page, type ComponentResolver, type ComponentModule };
+export { router, usePage, onPageUpdated, type ComponentResolver, type ComponentModule };

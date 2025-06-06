@@ -1,11 +1,13 @@
 <script lang="ts" module>
 	import { type Page, router } from '@inertiajs/core';
-	import type { Component } from 'svelte';
+	import { getContext, setContext, type Component } from 'svelte';
+
+	const kPage = Symbol('inertia-page');
+	const kPageListener = Symbol('inertia-page-listener');
 
 	export type ComponentModule = {
 		default: Component;
 		layout?: Component | Component[];
-		layoutProps?: Map<Component, Record<string, any>>;
 	};
 	export type ComponentResolver = (name: string) => ComponentModule | Promise<ComponentModule>;
 
@@ -13,52 +15,39 @@
 		initialComponent: ComponentModule;
 		initialPage: Page;
 		resolveComponent: ComponentResolver;
+		onupdate?: (event: CustomEvent<Page>) => void;
+		origin?: URL;
 	}
 
-	type InertiaSveltePage = Readonly<Page> & {
-		readonly onUpdated: (listener: (page: InertiaSveltePage) => void) => () => void;
-	};
+	/**
+	 * Returns the current Inertia page data.
+	 */
+	export function usePage() {
+		return getContext<Page>(kPage);
+	}
 
-	let pageData: Page = $state({} as any);
-
-	let updated = new Set<(page: InertiaSveltePage) => void>();
-
-	export const page: InertiaSveltePage = {
-		get component() {
-			return pageData.component;
-		},
-		get props() {
-			return pageData.props;
-		},
-		get url() {
-			return pageData.url;
-		},
-		get version() {
-			return pageData.version;
-		},
-		get clearHistory() {
-			return pageData.clearHistory;
-		},
-		get encryptHistory() {
-			return pageData.encryptHistory;
-		},
-		get deferredProps() {
-			return pageData.deferredProps;
-		},
-		get rememberedState() {
-			return pageData.rememberedState;
-		},
-		onUpdated(listener: (page: InertiaSveltePage) => void) {
-			updated.add(listener);
-			return () => updated.delete(listener);
+	/**
+	 * Registers a listener that will be called whenever the Inertia page is updated.
+	 * @param listener - A function that receives the updated page data.
+	 */
+	export function onPageUpdated(listener: (page: Page) => void) {
+		const listeners = getContext<Set<(page: Page) => void>>(kPageListener);
+		if (!listeners) {
+			throw new Error('onPageUpdated must be used within an InertiaApp context');
 		}
-	};
+		listeners.add(listener);
+		return listeners.delete.bind(listeners, listener);
+	}
 </script>
 
 <script lang="ts">
 	import { cloneDeep } from 'lodash-es';
+	import { BROWSER } from 'esm-env';
 
-	let { initialComponent, initialPage, resolveComponent }: InertiaAppProps = $props();
+	let { initialComponent, initialPage, resolveComponent, onupdate, origin }: InertiaAppProps =
+		$props();
+
+	const updated = new Set<(page: Page) => void>();
 
 	let component: ComponentModule = $state.raw(initialComponent);
 	let key: number | null = $state(null);
@@ -67,28 +56,45 @@
 		Array.isArray(component.layout) ? component.layout : component.layout ? [component.layout] : []
 	);
 
-	if (typeof globalThis.window !== 'undefined') {
+	let pageData = $state.raw(transformURL(initialPage));
+
+	// svelte-ignore state_referenced_locally
+	setContext(kPage, pageData);
+
+	setContext(kPageListener, updated);
+
+	function transformURL(page: Page): Page {
+		const cloned = cloneDeep(page);
+		if (!origin) {
+			return cloned;
+		}
+		cloned.url = new URL(cloned.url, origin).href;
+		return cloned;
+	}
+
+	if (BROWSER) {
+		// svelte-ignore state_referenced_locally
 		router.init({
-			initialPage,
+			initialPage: pageData,
 			resolveComponent,
 			swapComponent: async (args) => {
 				component = args.component as ComponentModule;
-				pageData = cloneDeep(args.page);
+				pageData = transformURL(args.page);
 				key = args.preserveState ? key : Date.now();
-				updated.forEach((c) => c(page));
+				onupdate?.(new CustomEvent('inertia:page', { detail: pageData }));
+				updated.forEach((c) => c(pageData));
 			}
 		});
+		// svelte-ignore state_referenced_locally
+		onupdate?.(new CustomEvent('inertia:page', { detail: pageData }));
+		updated.forEach((c) => c(pageData));
 	}
-
-	pageData = initialPage;
-	updated.forEach((c) => c(page));
 </script>
 
 {#snippet layout(components: Component[], Children: Component)}
 	{#if components.length > 0}
 		{@const Layout = layouts[0]}
-		{@const layoutProps = component.layoutProps?.get(Layout!) ?? {}}
-		<Layout {...pageData.props} {...layoutProps}>
+		<Layout {...pageData.props}>
 			{@render layout(components.slice(1), Children)}
 		</Layout>
 	{:else}

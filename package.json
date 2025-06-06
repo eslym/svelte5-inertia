@@ -1,7 +1,7 @@
 {
 	"name": "@eslym/svelte5-inertia",
 	"description": "An alternative for `@inertiajs/svelte`.",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"author": {
 		"name": "0nepeop1e",
 		"email": "engshun.lim@gmail.com"
@@ -29,6 +29,11 @@
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js",
 			"svelte": "./dist/index.svelte"
+		},
+		"./bun": {
+			"types": "./dist/bun.d.ts",
+			"import": "./dist/bun.js",
+			"svelte": "./dist/bun.svelte"
 		}
 	},
 	"files": [
@@ -36,6 +41,7 @@
 	],
 	"devDependencies": {
 		"@sveltejs/package": "^2.3.11",
+		"@types/bun": "^1.2.15",
 		"@types/html-escape": "^2.0.2",
 		"@types/lodash-es": "^4.17.12",
 		"prettier": "^3.5.3",
