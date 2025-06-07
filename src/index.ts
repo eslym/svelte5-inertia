@@ -77,6 +77,10 @@ export async function createInertiaApp({
 		setupProgress(progress);
 	} else {
 		const { body: html, head } = svelteApp as SvelteRenderResult;
+
+		// the id is less likely to have dangerous characters, but it is short so just escape it
+		// the page data is JSON encoded, guaranteed to have dangerous characters, so not using
+		// `html-escape` package due to it does check for dangerous characters before replacing
 		const body = `<div id="${e(id)}" data-page="${e(JSON.stringify(initialPage))}" data-server-rendered="true">${html}</div>`;
 
 		return {

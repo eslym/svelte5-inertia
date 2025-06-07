@@ -1,13 +1,10 @@
 export function e(str: string): string {
-	return str.replace(
-		/[&<>"']/g,
-		(match) =>
-			({
-				'&': '&amp;',
-				'<': '&lt;',
-				'>': '&gt;',
-				'"': '&quot;',
-				"'": '&#39;'
-			})[match]!
-	);
+	const replacements: Record<string, string> = {
+		'&': '&amp;',
+		'<': '&lt;',
+		'>': '&gt;',
+		'"': '&quot;',
+		"'": '&#39;'
+	};
+	return str.replace(/[&<>"']/g, (match) => replacements[match]!);
 }
