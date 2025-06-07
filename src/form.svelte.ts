@@ -69,51 +69,36 @@ export interface InertiaFormWithRemember<Data extends FormDataType> extends Iner
 	store(): this;
 }
 
-type UseFormFn = {
-	/**
-	 * Create a new form instance with default data.
-	 * @param defaultData
-	 */
-	<Data extends FormDataType>(defaultData: Data): InertiaForm<Data>;
-	<Data extends FormDataType>(
-		defaultData: Data,
-		rememberKey: string
-	): InertiaFormWithRemember<Data>;
+export function useForm<Data extends FormDataType>(defaultData: Data): InertiaForm<Data>;
+export function useForm<Data extends FormDataType>(
+	defaultData: Data,
+	rememberKey: string
+): InertiaFormWithRemember<Data>;
+export function useForm(defaultData: any, rememberKey?: string) {
+	let val = defaultData;
 
-	/**
-	 * Create a new form instance which derived its default data from a function.
-	 * @param derived
-	 */
-	derived: {
-		<Data extends FormDataType>(derived: () => Data): InertiaForm<Data>;
-		<Data extends FormDataType>(
-			derived: () => Data,
-			rememberKey: string
-		): InertiaFormWithRemember<Data>;
-	};
-};
+	const defaults = createDefaults(
+		() => val,
+		(value) => (val = value)
+	);
 
-export const useForm: UseFormFn = Object.assign(
-	(defaultData: any, rememberKey?: string) => {
-		let val = defaultData;
+	return use_form(defaults, rememberKey);
+}
 
-		const defaults = createDefaults(
-			() => val,
-			(value) => (val = value)
-		);
+export function useFormDerived<Data extends FormDataType>(
+	derivedDefaults: () => Data
+): InertiaForm<Data>;
+export function useFormDerived<Data extends FormDataType>(
+	derivedDefaults: () => Data,
+	rememberKey: string
+): InertiaFormWithRemember<Data>;
+export function useFormDerived(derivedDefaults: () => any, rememberKey?: string) {
+	let val = $derived.by(derivedDefaults);
 
-		return use_form(defaults, rememberKey);
-	},
-	{
-		derived: (derived: () => any, rememberKey?: string) => {
-			let val = $derived.by(derived);
+	const defaults = createDefaults(() => val);
 
-			const defaults = createDefaults(() => val);
-
-			return use_form(defaults, rememberKey);
-		}
-	}
-);
+	return use_form(defaults, rememberKey);
+}
 
 function use_form(defaults: { value: any }, rememberKey?: string) {
 	let data = $state(cloneDeep(defaults.value));
