@@ -73,8 +73,8 @@ export async function createInertiaApp({
 		props
 	});
 
-	if (BROWSER && progress) {
-		setupProgress(progress);
+	if (BROWSER) {
+		progress && setupProgress(progress);
 	} else {
 		const { body: html, head } = svelteApp as SvelteRenderResult;
 
