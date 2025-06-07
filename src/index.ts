@@ -1,5 +1,4 @@
 import { type Page, router, setupProgress } from '@inertiajs/core';
-import escape from 'html-escape';
 import AppComponent, {
 	type ComponentModule,
 	type ComponentResolver,
@@ -8,6 +7,8 @@ import AppComponent, {
 	onPageUpdated
 } from './app.svelte';
 import { BROWSER } from 'esm-env';
+import { render } from 'svelte/server';
+import SSR from './ssr.svelte';
 
 export { default as WhenVisible } from './when-visible.svelte';
 export { default as Deferred } from './deferred.svelte';
@@ -27,7 +28,7 @@ export { useRemember } from './remember.svelte';
 export { usePoll } from './poll';
 export { usePrefetch } from './prefetch.svelte';
 
-type SvelteRenderResult = { html: string; head: string; css?: { code: string } };
+type SvelteRenderResult = ReturnType<typeof render>;
 
 type CreateInertiaAppOptions = {
 	id?: string;
@@ -72,17 +73,16 @@ export async function createInertiaApp({
 		props
 	});
 
-	if (!BROWSER) {
-		const { html, head, css } = svelteApp as SvelteRenderResult;
+	if (BROWSER && progress) {
+		setupProgress(progress);
+	} else {
+		const { body: html, head } = svelteApp as SvelteRenderResult;
+		const { body } = render(SSR, { props: { id, page: initialPage, html } });
 
 		return {
-			body: `<div data-server-rendered="true" id="${id}" data-page="${escape(JSON.stringify(initialPage))}">${html}</div>`,
-			head: [head, css ? `<style data-vite-css>${css.code}</style>` : '']
+			body,
+			head: [head]
 		};
-	}
-
-	if (progress) {
-		setupProgress(progress);
 	}
 }
 

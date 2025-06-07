@@ -20,7 +20,7 @@ type ServeOptions = (
 	showError?: boolean;
 };
 
-export function createServer({
+export function createBunServer({
 	hostname,
 	port = 13714,
 	unix,
