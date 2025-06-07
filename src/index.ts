@@ -62,7 +62,7 @@ export async function createInertiaApp({
 
 	const [initialComponent] = await Promise.all([
 		resolveComponent(initialPage.component),
-		router.decryptHistory().catch(() => {})
+		BROWSER ? router.decryptHistory().catch(() => {}) : Promise.resolve()
 	]);
 
 	const props: InertiaAppProps = { initialPage, initialComponent, resolveComponent };
