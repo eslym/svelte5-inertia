@@ -77,10 +77,10 @@ export async function createInertiaApp({
 		setupProgress(progress);
 	} else {
 		const { body: html, head } = svelteApp as SvelteRenderResult;
-		const { body } = render(SSR, { props: { id, page: initialPage, html } });
+		const { body: result } = render(SSR, { props: { id, page: initialPage, html } });
 
 		return {
-			body,
+			body: result.replace(/^<!--\[-->/, '').replace(/<!--\]-->$/, ''),
 			head: [head]
 		};
 	}
