@@ -7,8 +7,8 @@ import AppComponent, {
 	onPageUpdated
 } from './app.svelte';
 import { BROWSER } from 'esm-env';
-import { render } from 'svelte/server';
-import SSR from './ssr.svelte';
+import type { render } from 'svelte/server';
+import { e } from './escape';
 
 export { default as WhenVisible } from './when-visible.svelte';
 export { default as Deferred } from './deferred.svelte';
@@ -77,10 +77,10 @@ export async function createInertiaApp({
 		setupProgress(progress);
 	} else {
 		const { body: html, head } = svelteApp as SvelteRenderResult;
-		const { body: result } = render(SSR, { props: { id, page: initialPage, html } });
+		const body = `<div id="${e(id)}" data-page="${e(JSON.stringify(initialPage))}" data-server-rendered="true">${html}</div>`;
 
 		return {
-			body: result.replace(/^<!--\[-->/, '').replace(/<!--\]-->$/, ''),
+			body,
 			head: [head]
 		};
 	}
