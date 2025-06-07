@@ -86,4 +86,4 @@ export async function createInertiaApp({
 	}
 }
 
-export { router, usePage, onPageUpdated, type ComponentResolver, type ComponentModule };
+export { router, usePage, onPageUpdated, type ComponentResolver, type ComponentModule, type Page };
