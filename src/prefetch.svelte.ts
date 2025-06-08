@@ -1,8 +1,10 @@
-import { router, type VisitOptions } from '@inertiajs/core';
+import type { VisitOptions } from '@inertiajs/core';
 import { BROWSER } from 'esm-env';
 import { onMount } from 'svelte';
+import { useRouter } from './app.svelte';
 
 export function usePrefetch(options: VisitOptions = {}) {
+	const router = useRouter();
 	const cached =
 		typeof window === 'undefined' ? null : router.getCached(window.location.pathname, options);
 	const inFlight =

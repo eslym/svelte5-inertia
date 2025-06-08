@@ -1,9 +1,10 @@
 <script lang="ts" module>
-	import { type Page, router } from '@inertiajs/core';
+	import { type Page, type Router } from '@inertiajs/core';
 	import { getContext, setContext, type Component } from 'svelte';
 
 	const kPage = Symbol('inertia-page');
 	const kPageListener = Symbol('inertia-page-listener');
+	const kRouter = Symbol('inertia-router');
 
 	export type ComponentModule = {
 		default: Component;
@@ -15,7 +16,8 @@
 		initialComponent: ComponentModule;
 		initialPage: Page;
 		resolveComponent: ComponentResolver;
-		onupdate?: (event: CustomEvent<Page>) => void;
+		router: Router;
+		onupdate?: (event: CustomEvent<{ page: Page; router: Router }>) => void;
 		origin?: URL;
 	}
 
@@ -30,13 +32,17 @@
 	 * Registers a listener that will be called whenever the Inertia page is updated.
 	 * @param listener - A function that receives the updated page data.
 	 */
-	export function onPageUpdated(listener: (page: Page) => void) {
-		const listeners = getContext<Set<(page: Page) => void>>(kPageListener);
+	export function onPageUpdated(listener: (page: Page, router: Router) => void) {
+		const listeners = getContext<Set<(page: Page, router: Router) => void>>(kPageListener);
 		if (!listeners) {
 			throw new Error('onPageUpdated must be used within an InertiaApp context');
 		}
 		listeners.add(listener);
 		return listeners.delete.bind(listeners, listener);
+	}
+
+	export function useRouter() {
+		return getContext<Router>(kRouter);
 	}
 </script>
 
@@ -44,10 +50,16 @@
 	import { cloneDeep } from 'lodash-es';
 	import { BROWSER } from 'esm-env';
 
-	let { initialComponent, initialPage, resolveComponent, onupdate, origin }: InertiaAppProps =
-		$props();
+	let {
+		initialComponent,
+		initialPage,
+		resolveComponent,
+		router,
+		onupdate,
+		origin
+	}: InertiaAppProps = $props();
 
-	const updated = new Set<(page: Page) => void>();
+	const updated = new Set<(page: Page, router: Router) => void>();
 
 	let component: ComponentModule = $state.raw(initialComponent);
 	let key: number | null = $state(null);
@@ -62,6 +74,8 @@
 	setContext(kPage, pageData);
 
 	setContext(kPageListener, updated);
+
+	setContext(kRouter, router);
 
 	function transformURL(page: Page): Page {
 		const cloned = cloneDeep(page);
@@ -81,13 +95,13 @@
 				component = args.component as ComponentModule;
 				pageData = transformURL(args.page);
 				key = args.preserveState ? key : Date.now();
-				onupdate?.(new CustomEvent('inertia:page', { detail: pageData }));
-				updated.forEach((c) => c(pageData));
+				onupdate?.(new CustomEvent('inertia:page', { detail: { page: pageData, router } }));
+				updated.forEach((c) => c(pageData, router));
 			}
 		});
 		// svelte-ignore state_referenced_locally
-		onupdate?.(new CustomEvent('inertia:page', { detail: pageData }));
-		updated.forEach((c) => c(pageData));
+		onupdate?.(new CustomEvent('inertia:page', { detail: { page: pageData, router } }));
+		updated.forEach((c) => c(pageData, router));
 	}
 </script>
 

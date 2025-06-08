@@ -1,8 +1,10 @@
-import { type Method, type Page, type Progress, router, type VisitOptions } from '@inertiajs/core';
+import type { Method, Page, Progress, VisitOptions } from '@inertiajs/core';
+import { BROWSER } from 'esm-env';
 import { cloneDeep, isEqual, noop } from 'lodash-es';
 import { onDestroy, untrack } from 'svelte';
 import type { ActionReturn } from 'svelte/action';
 import { on } from 'svelte/events';
+import { useRouter } from './app.svelte';
 
 export type FormDataType = Record<string, any>;
 type FormOptions = Omit<VisitOptions, 'data'>;
@@ -101,6 +103,7 @@ export function useFormDerived(derivedDefaults: () => any, rememberKey?: string)
 }
 
 function use_form(defaults: { value: any }, rememberKey?: string) {
+	const router = useRouter();
 	let data = $state(cloneDeep(defaults.value));
 	let errors = $state<Record<string, string | undefined>>({});
 	let processing = $state(false);
@@ -122,6 +125,7 @@ function use_form(defaults: { value: any }, rememberKey?: string) {
 	}
 
 	function submit(method: Method, url: string | URL, options: FormOptions = {}) {
+		if (!BROWSER) throw new Error('Form can only submit in a browser environment.');
 		if (processing) throw new FormProcessingError();
 		form.store?.();
 		return new Promise<Page>((resolve, reject) => {
@@ -281,10 +285,12 @@ function use_form(defaults: { value: any }, rememberKey?: string) {
 			return form;
 		};
 		form.store = () => {
+			if (!BROWSER) return form;
 			router.remember({ data: remember(cloneDeep(data)), errors: cloneDeep(errors) }, rememberKey);
 			return form;
 		};
 		form.restore = () => {
+			if (!BROWSER) return form;
 			const restored = router.restore(rememberKey) as
 				| {
 						data: any;

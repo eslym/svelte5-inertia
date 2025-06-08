@@ -1,9 +1,10 @@
-import { type Page, router, setupProgress } from '@inertiajs/core';
+import type { Page, Router } from '@inertiajs/core';
 import AppComponent, {
 	type ComponentModule,
 	type ComponentResolver,
 	type InertiaAppProps,
 	usePage,
+	useRouter,
 	onPageUpdated
 } from './app.svelte';
 import { BROWSER } from 'esm-env';
@@ -12,7 +13,7 @@ import { e } from './escape';
 
 export { default as WhenVisible } from './when-visible.svelte';
 export { default as Deferred } from './deferred.svelte';
-export { default as Link, inertia, type ActionOptions } from './link.svelte';
+export { default as Link, useLink, type ActionOptions } from './link.svelte';
 
 export {
 	useForm,
@@ -36,7 +37,10 @@ type CreateInertiaAppOptions = {
 	setup(params: {
 		el: HTMLElement | null;
 		App: typeof AppComponent;
-		props: Pick<InertiaAppProps, 'initialComponent' | 'initialPage' | 'resolveComponent'>;
+		props: Pick<
+			InertiaAppProps,
+			'initialComponent' | 'initialPage' | 'resolveComponent' | 'router'
+		>;
 	}): void | AppComponent | SvelteRenderResult;
 	progress?:
 		| false
@@ -56,38 +60,56 @@ export async function createInertiaApp({
 	progress,
 	page
 }: CreateInertiaAppOptions) {
-	const target = BROWSER ? document.getElementById(id) : null;
-	const initialPage = page ?? JSON.parse(target?.dataset.page ?? '{}');
 	const resolveComponent = (name: string) => Promise.resolve(resolve(name));
-
-	const [initialComponent] = await Promise.all([
-		resolveComponent(initialPage.component),
-		BROWSER ? router.decryptHistory().catch(() => {}) : Promise.resolve()
-	]);
-
-	const props: InertiaAppProps = { initialPage, initialComponent, resolveComponent };
-
-	const svelteApp = setup({
-		el: target,
-		App: AppComponent,
-		props
-	});
-
 	if (BROWSER) {
-		progress && setupProgress(progress);
-	} else {
-		const { body: html, head } = svelteApp as SvelteRenderResult;
+		const { router, setupProgress } = await import('@inertiajs/core');
+		const target = document.getElementById(id);
+		const initialPage = page ?? JSON.parse(target?.dataset.page ?? '{}');
+		const [initialComponent] = await Promise.all([
+			resolveComponent(initialPage.component),
+			router.decryptHistory().catch(() => {})
+		]);
 
-		// the id is less likely to have dangerous characters, but it is short so just escape it
-		// the page data is JSON encoded, guaranteed to have dangerous characters, so not using
-		// `html-escape` package due to it does check for dangerous characters before replacing
-		const body = `<div id="${e(id)}" data-page="${e(JSON.stringify(initialPage))}" data-server-rendered="true">${html}</div>`;
+		setup({
+			el: target,
+			App: AppComponent,
+			props: {
+				initialPage,
+				initialComponent,
+				resolveComponent,
+				router
+			}
+		});
+
+		if (progress) {
+			setupProgress(progress);
+		}
+	} else {
+		const initialComponent = await resolveComponent(page!.component);
+		const result = setup({
+			el: null,
+			App: AppComponent,
+			props: {
+				initialPage: page!,
+				initialComponent,
+				resolveComponent,
+				router: null!
+			}
+		}) as SvelteRenderResult;
 
 		return {
-			body,
-			head: [head]
+			body: `<div id="${e(id)}" data-page="${e(JSON.stringify(page))}" data-server-rendered="true">${result.body}</div>`,
+			head: [result.head]
 		};
 	}
 }
 
-export { router, usePage, onPageUpdated, type ComponentResolver, type ComponentModule, type Page };
+export {
+	usePage,
+	useRouter,
+	onPageUpdated,
+	type ComponentResolver,
+	type ComponentModule,
+	type Page,
+	type Router,
+};

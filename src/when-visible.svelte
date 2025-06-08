@@ -1,8 +1,11 @@
 <script lang="ts" generics="T extends keyof SvelteHTMLElements = 'div'">
 	import type { SvelteHTMLElements } from 'svelte/elements';
-	import { type ReloadOptions, router } from '@inertiajs/core';
+	import type { ReloadOptions } from '@inertiajs/core';
 	import { onMount, type Snippet } from 'svelte';
 	import { BROWSER } from 'esm-env';
+	import { useRouter } from './app.svelte';
+
+	const router = useRouter();
 
 	let {
 		children,

@@ -1,9 +1,10 @@
-import { router } from '@inertiajs/core';
 import { onDestroy } from 'svelte';
 import { cloneDeep } from 'lodash-es';
 import { BROWSER } from 'esm-env';
+import { useRouter } from './app.svelte';
 
 export function useRemember<State>(initial: State, key?: string) {
+	const router = useRouter();
 	let state = $state(BROWSER ? ((router.restore(key) as State) ?? initial) : initial);
 
 	if (BROWSER) {
