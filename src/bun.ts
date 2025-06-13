@@ -6,13 +6,13 @@ type ServeOptions = (
 	| {
 			hostname?: string;
 			port?: number;
-			resusePort?: boolean;
+			reusePort?: boolean;
 			unix?: undefined;
 	  }
 	| {
 			hostname?: undefined;
 			port?: undefined;
-			resusePort?: undefined;
+			reusePort?: undefined;
 			unix: string;
 	  }
 ) & {
@@ -24,7 +24,7 @@ export function createBunServer({
 	hostname,
 	port = 13714,
 	unix,
-	resusePort,
+	reusePort,
 	showError = false,
 	render
 }: ServeOptions): Bun.Server {
@@ -37,7 +37,7 @@ export function createBunServer({
 	const server = Bun.serve({
 		hostname: unix ? undefined : hostname,
 		port: unix ? undefined : port,
-		reusePort: unix ? undefined : resusePort,
+		reusePort: unix ? undefined : reusePort,
 		unix,
 		routes: {
 			'/health': () => Response.json({ status: 'OK', timestamp: Date.now() }, { headers }),

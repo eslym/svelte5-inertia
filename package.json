@@ -1,7 +1,7 @@
 {
 	"name": "@eslym/svelte5-inertia",
 	"description": "An alternative for `@inertiajs/svelte`.",
-	"version": "0.0.11",
+	"version": "0.0.12",
 	"author": {
 		"name": "0nepeop1e",
 		"email": "engshun.lim@gmail.com"
