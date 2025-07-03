@@ -19,6 +19,8 @@
 		router: Router;
 		onupdate?: (event: CustomEvent<{ page: Page; router: Router }>) => void;
 		origin?: URL;
+		prepend?: Component;
+		append?: Component;
 	}
 
 	/**
@@ -56,7 +58,9 @@
 		resolveComponent,
 		router,
 		onupdate,
-		origin
+		origin,
+		prepend: Prepend,
+		append: Append
 	}: InertiaAppProps = $props();
 
 	const updated = new Set<(page: Page, router: Router) => void>();
@@ -118,4 +122,12 @@
 	{/if}
 {/snippet}
 
+{#if Prepend}
+	<Prepend />
+{/if}
+
 {@render layout(layouts, component.default)}
+
+{#if Append}
+	<Append />
+{/if}
