@@ -17,6 +17,7 @@ export { default as Link, useLink, type ActionOptions } from './link.svelte';
 
 export {
 	useForm,
+	useFormDerived,
 	FormProcessingError,
 	FormCanceledError,
 	FormValidationError,
@@ -111,5 +112,5 @@ export {
 	type ComponentResolver,
 	type ComponentModule,
 	type Page,
-	type Router,
+	type Router
 };
