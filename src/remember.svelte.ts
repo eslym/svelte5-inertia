@@ -1,10 +1,10 @@
 import { onDestroy } from 'svelte';
 import { cloneDeep } from 'lodash-es';
 import { BROWSER } from 'esm-env';
-import { useRouter } from './app.svelte';
+import { context } from './context';
 
 export function useRemember<State>(initial: State, key?: string) {
-	const router = useRouter();
+	const router = context.get().router;
 	let state = $state(BROWSER ? ((router.restore(key) as State) ?? initial) : initial);
 
 	if (BROWSER) {

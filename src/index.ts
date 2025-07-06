@@ -2,10 +2,7 @@ import type { Page, Router } from '@inertiajs/core';
 import AppComponent, {
 	type ComponentModule,
 	type ComponentResolver,
-	type InertiaAppProps,
-	usePage,
-	useRouter,
-	onPageUpdated
+	type InertiaAppProps
 } from './app.svelte';
 import { BROWSER } from 'esm-env';
 import type { render } from 'svelte/server';
@@ -13,7 +10,10 @@ import { e } from './escape';
 
 export { default as WhenVisible } from './when-visible.svelte';
 export { default as Deferred } from './deferred.svelte';
-export { default as Link, useLink, type ActionOptions } from './link.svelte';
+export { default as Link } from './link.svelte';
+export { default as InertiaContext } from './inertia-context.svelte';
+
+export { context as inertiaContext, useInertia, useLink, usePage, useRouter } from './context';
 
 export {
 	useForm,
@@ -29,6 +29,7 @@ export {
 export { useRemember } from './remember.svelte';
 export { usePoll } from './poll';
 export { usePrefetch } from './prefetch.svelte';
+export * from './layout';
 
 type SvelteRenderResult = ReturnType<typeof render>;
 
@@ -105,12 +106,4 @@ export async function createInertiaApp({
 	}
 }
 
-export {
-	usePage,
-	useRouter,
-	onPageUpdated,
-	type ComponentResolver,
-	type ComponentModule,
-	type Page,
-	type Router
-};
+export { type ComponentResolver, type ComponentModule, type Page, type Router };

@@ -3,9 +3,9 @@
 	import type { ReloadOptions } from '@inertiajs/core';
 	import { onMount, type Snippet } from 'svelte';
 	import { BROWSER } from 'esm-env';
-	import { useRouter } from './app.svelte';
+	import { context } from './context';
 
-	const router = useRouter();
+	const router = context.get().router;
 
 	let {
 		children,

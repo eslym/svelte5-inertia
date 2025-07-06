@@ -1,10 +1,6 @@
 <script lang="ts" module>
-	import { type Page, type Router } from '@inertiajs/core';
-	import { getContext, setContext, type Component } from 'svelte';
-
-	const kPage = Symbol('inertia-page');
-	const kPageListener = Symbol('inertia-page-listener');
-	const kRouter = Symbol('inertia-router');
+	import { type Page, type PageProps, type Router } from '@inertiajs/core';
+	import type { Component } from 'svelte';
 
 	export type ComponentModule = {
 		default: Component;
@@ -18,94 +14,102 @@
 		resolveComponent: ComponentResolver;
 		router: Router;
 		onupdate?: (event: CustomEvent<{ page: Page; router: Router }>) => void;
-		origin?: URL;
-		prepend?: Component;
-		append?: Component;
+		wrap?: Component<PageProps>;
 	}
 
-	/**
-	 * Returns the current Inertia page data.
-	 */
-	export function usePage() {
-		return getContext<Page>(kPage);
-	}
-
-	/**
-	 * Registers a listener that will be called whenever the Inertia page is updated.
-	 * @param listener - A function that receives the updated page data.
-	 */
-	export function onPageUpdated(listener: (page: Page, router: Router) => void) {
-		const listeners = getContext<Set<(page: Page, router: Router) => void>>(kPageListener);
-		if (!listeners) {
-			throw new Error('onPageUpdated must be used within an InertiaApp context');
+	function pageProxy(getter: () => Page): Page {
+		if (BROWSER) {
+			const err = () => {
+				throw new Error('Page object is immutable and cannot be modified.');
+			};
+			return new Proxy({} as any, {
+				get(_, prop) {
+					return Reflect.get(getter(), prop);
+				},
+				has(_, prop) {
+					return Reflect.has(getter(), prop);
+				},
+				ownKeys() {
+					return Reflect.ownKeys(getter());
+				},
+				getOwnPropertyDescriptor(_, prop) {
+					return Reflect.getOwnPropertyDescriptor(getter(), prop);
+				},
+				isExtensible() {
+					return false;
+				},
+				// immutable
+				set: err,
+				defineProperty: err,
+				deleteProperty: err,
+				setPrototypeOf: err,
+				preventExtensions: err
+			});
 		}
-		listeners.add(listener);
-		return listeners.delete.bind(listeners, listener);
-	}
-
-	export function useRouter() {
-		return getContext<Router>(kRouter);
+		return getter();
 	}
 </script>
 
 <script lang="ts">
-	import { cloneDeep } from 'lodash-es';
 	import { BROWSER } from 'esm-env';
+	import { context, createLink } from './context';
 
 	let {
 		initialComponent,
 		initialPage,
 		resolveComponent,
 		router,
-		onupdate,
-		origin,
-		prepend: Prepend,
-		append: Append
+		onupdate = undefined,
+		wrap = undefined
 	}: InertiaAppProps = $props();
-
-	const updated = new Set<(page: Page, router: Router) => void>();
 
 	let component: ComponentModule = $state.raw(initialComponent);
 	let key: number | null = $state(null);
 
-	let layouts = $derived(
-		Array.isArray(component.layout) ? component.layout : component.layout ? [component.layout] : []
-	);
-
-	let pageData = $state.raw(transformURL(initialPage));
-
-	// svelte-ignore state_referenced_locally
-	setContext(kPage, pageData);
-
-	setContext(kPageListener, updated);
-
-	setContext(kRouter, router);
-
-	function transformURL(page: Page): Page {
-		const cloned = cloneDeep(page);
-		if (!origin) {
-			return cloned;
+	let layouts = $derived.by(() => {
+		const layouts = [];
+		if (wrap) layouts.push(wrap);
+		if (component.layout) {
+			if (Array.isArray(component.layout)) {
+				layouts.push(...component.layout);
+			} else {
+				layouts.push(component.layout);
+			}
 		}
-		cloned.url = new URL(cloned.url, origin).href;
-		return cloned;
-	}
+		return layouts;
+	});
+
+	let pageData = $state.raw(initialPage);
+	const proxy = pageProxy(() => pageData);
+
+	const link = createLink(router);
+	const ctx = {
+		get router() {
+			return router;
+		},
+		get page() {
+			return proxy;
+		},
+		get link() {
+			return link;
+		}
+	};
+
+	context.set(ctx);
 
 	if (BROWSER) {
 		// svelte-ignore state_referenced_locally
 		router.init({
-			initialPage: pageData,
+			initialPage,
 			resolveComponent,
 			swapComponent: async (args) => {
 				component = args.component as ComponentModule;
-				pageData = transformURL(args.page);
+				pageData = args.page;
 				key = args.preserveState ? key : Date.now();
 				onupdate?.(new CustomEvent('inertia:page', { detail: { page: pageData, router } }));
-				updated.forEach((c) => c(pageData, router));
 			}
 		});
-		// svelte-ignore state_referenced_locally
-		onupdate?.(new CustomEvent('inertia:page', { detail: { page: pageData, router } }));
-		updated.forEach((c) => c(pageData, router));
+		onupdate?.(new CustomEvent('inertia:page', { detail: { page: initialPage, router } }));
 	}
 </script>
 
@@ -122,12 +126,4 @@
 	{/if}
 {/snippet}
 
-{#if Prepend}
-	<Prepend />
-{/if}
-
 {@render layout(layouts, component.default)}
-
-{#if Append}
-	<Append />
-{/if}

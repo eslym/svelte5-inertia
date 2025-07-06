@@ -1,14 +1,12 @@
 import type { VisitOptions } from '@inertiajs/core';
 import { BROWSER } from 'esm-env';
 import { onMount } from 'svelte';
-import { useRouter } from './app.svelte';
+import { context } from './context';
 
 export function usePrefetch(options: VisitOptions = {}) {
-	const router = useRouter();
-	const cached =
-		typeof window === 'undefined' ? null : router.getCached(window.location.pathname, options);
-	const inFlight =
-		typeof window === 'undefined' ? null : router.getPrefetching(window.location.pathname, options);
+	const router = context.get().router;
+	const cached = BROWSER ? router.getCached(window.location.pathname, options) : null;
+	const inFlight = BROWSER ? router.getPrefetching(window.location.pathname, options) : null;
 
 	let isPrefetched = $state(cached !== null);
 	let isPrefetching = $state(inFlight !== null);
@@ -46,7 +44,11 @@ export function usePrefetch(options: VisitOptions = {}) {
 			return lastUpdatedAt;
 		},
 		flush() {
-			router.flush(window.location.pathname, options);
+			if (BROWSER) {
+				router.flush(window.location.pathname, options);
+			} else {
+				throw new Error('Prefetching is only available in the browser.');
+			}
 		}
 	};
 }

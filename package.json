@@ -1,7 +1,7 @@
 {
 	"name": "@eslym/svelte5-inertia",
 	"description": "An alternative for `@inertiajs/svelte`.",
-	"version": "0.0.14",
+	"version": "0.1.0",
 	"author": {
 		"name": "0nepeop1e",
 		"email": "engshun.lim@gmail.com"
@@ -14,6 +14,7 @@
 		"@inertiajs/core": "^2",
 		"esm-env": ">=1.2.2",
 		"lodash-es": "^4.17.21",
+		"runed": ">=0.29.2",
 		"svelte": "^5"
 	},
 	"scripts": {

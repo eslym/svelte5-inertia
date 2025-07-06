@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { usePage } from './app.svelte';
 	import type { Snippet } from 'svelte';
+	import { context } from './context';
 
 	let {
 		data,
@@ -8,10 +8,10 @@
 		fallback
 	}: { data: string | string[]; children: Snippet; fallback: Snippet } = $props();
 
-	let page = usePage();
+	const inertia = context.get();
 
 	let slot = $derived(
-		(Array.isArray(data) ? data : [data]).every((k) => typeof page.props[k] !== 'undefined')
+		(Array.isArray(data) ? data : [data]).every((k) => typeof inertia.page.props[k] !== 'undefined')
 			? children
 			: fallback
 	);

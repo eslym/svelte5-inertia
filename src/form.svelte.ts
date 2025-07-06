@@ -4,7 +4,7 @@ import { cloneDeep, isEqual, noop } from 'lodash-es';
 import { onDestroy, untrack } from 'svelte';
 import type { ActionReturn } from 'svelte/action';
 import { on } from 'svelte/events';
-import { useRouter } from './app.svelte';
+import { context } from './context';
 
 export type FormDataType = Record<string, any>;
 type FormOptions = Omit<VisitOptions, 'data'>;
@@ -103,7 +103,7 @@ export function useFormDerived(derivedDefaults: () => any, rememberKey?: string)
 }
 
 function use_form(defaults: { value: any }, rememberKey?: string) {
-	const router = useRouter();
+	const router = context.get().router;
 	let data = $state(cloneDeep(defaults.value));
 	let errors = $state<Record<string, string | undefined>>({});
 	let processing = $state(false);
