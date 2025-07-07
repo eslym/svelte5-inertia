@@ -13,7 +13,14 @@ export { default as Deferred } from './deferred.svelte';
 export { default as Link } from './link.svelte';
 export { default as InertiaContext } from './inertia-context.svelte';
 
-export { context as inertiaContext, useInertia, useLink, usePage, useRouter } from './context';
+export {
+	context as inertiaContext,
+	useInertia,
+	useLink,
+	usePage,
+	useRouter,
+	type InertiaAction
+} from './context';
 
 export {
 	useForm,

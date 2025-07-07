@@ -147,6 +147,12 @@ export function createLink(router: Router): InertiaAction {
 					case true:
 						offprefetch.push(
 							on(node, 'mouseenter', () => {
+								if (
+									node.hasAttribute('disabled') ||
+									node.getAttribute('aria-disabled') === 'true'
+								) {
+									return;
+								}
 								hoverTimeout = setTimeout(prefetch, 75);
 							})
 						);
@@ -174,6 +180,9 @@ export function createLink(router: Router): InertiaAction {
 				return;
 			}
 			e.preventDefault();
+			if (node.hasAttribute('disabled') || node.getAttribute('aria-disabled') === 'true') {
+				return;
+			}
 			router.visit(url, {
 				...params(),
 				...pick(opts, 'onBefore', 'onCancel', 'onCancelToken'),
