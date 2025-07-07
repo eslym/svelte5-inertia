@@ -114,10 +114,11 @@
 </script>
 
 {#snippet layout(components: Component[], Children: Component)}
+	{@const _ = console.log(components)}
 	{#if components.length > 0}
-		{@const Layout = layouts[0]}
+		{@const [Layout, ...rest] = components}
 		<Layout {...pageData.props}>
-			{@render layout(components.slice(1), Children)}
+			{@render layout(rest, Children)}
 		</Layout>
 	{:else}
 		{#key key}
