@@ -38,9 +38,13 @@ export interface InertiaForm<Data extends FormDataType> {
 
 	data: Data;
 	default: Data;
-	errors: Record<string, string | undefined>;
+	errors: Record<string, string | string[] | undefined>;
 
-	allErrors(prefix?: string): string[];
+	allErrors(filter?: string | { test(key: string): boolean }): string[];
+
+	errorsWhere(
+		filter: string | { test(key: string): boolean }
+	): Record<string, string | string[] | undefined>;
 
 	transform(callback: (data: Data) => object): this;
 
@@ -105,7 +109,7 @@ export function useFormDerived(derivedDefaults: () => any, rememberKey?: string)
 function use_form(defaults: { value: any }, rememberKey?: string) {
 	const router = context.get().router;
 	let data = $state(cloneDeep(defaults.value));
-	let errors = $state<Record<string, string | undefined>>({});
+	let errors = $state<Record<string, string | string[] | undefined>>({});
 	let processing = $state(false);
 	let progress = $state<Progress | null>(null);
 
@@ -118,10 +122,29 @@ function use_form(defaults: { value: any }, rememberKey?: string) {
 
 	let dirty = $derived(!isEqual(data, defaults.value));
 
-	function allErrors(prefix: string = '') {
+	function allErrors(filter?: string | { test(key: string): boolean }) {
+		if (typeof filter === 'string') {
+			const prefix = filter;
+			filter = { test: (key: string) => key.startsWith(prefix) };
+		} else if (!filter) {
+			filter = { test: () => true };
+		}
 		return Object.entries(errors)
-			.filter(([key]) => key.startsWith(prefix))
-			.map(([_, value]) => value!);
+			.filter(([key]) => filter.test(key))
+			.map(([_, value]) => value!)
+			.flat();
+	}
+
+	function errorsWhere(
+		filter: string | { test(key: string): boolean }
+	): Record<string, string | string[] | undefined> {
+		if (typeof filter === 'string') {
+			const prefix = filter;
+			filter = { test: (key: string) => key.startsWith(prefix) };
+		} else if (!filter) {
+			filter = { test: () => true };
+		}
+		return Object.fromEntries(Object.entries(errors).filter(([key]) => filter.test(key)));
 	}
 
 	function submit(method: Method, url: string | URL, options: FormOptions = {}) {
@@ -243,12 +266,16 @@ function use_form(defaults: { value: any }, rememberKey?: string) {
 		get errors() {
 			return errors;
 		},
-		set errors(value: Record<string, string | undefined>) {
+		set errors(value: Record<string, string | string[] | undefined>) {
 			errors = value;
 		},
 		get allErrors() {
 			errors; // Trigger reactivity
 			return allErrors;
+		},
+		get errorsWhere() {
+			errors; // Trigger reactivity
+			return errorsWhere;
 		},
 		transform(callback: (data: any) => object) {
 			transform = callback;

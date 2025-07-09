@@ -114,7 +114,6 @@
 </script>
 
 {#snippet layout(components: Component[], Children: Component)}
-	{@const _ = console.log(components)}
 	{#if components.length > 0}
 		{@const [Layout, ...rest] = components}
 		<Layout {...pageData.props}>
