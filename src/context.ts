@@ -209,6 +209,8 @@ export function createLink(router: Router): InertiaAction {
 			});
 		});
 
+		update(options);
+
 		return {
 			update,
 			destroy() {
