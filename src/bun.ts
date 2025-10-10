@@ -16,7 +16,7 @@ type ServeOptions = (
 			unix: string;
 	  }
 ) & {
-	render(page: Page): InertiaAppResponse;
+	render(page: Page, request: Request): InertiaAppResponse;
 	showError?: boolean;
 };
 
@@ -41,7 +41,7 @@ export function createBunServer({
 		unix,
 		routes: {
 			'/health': () => Response.json({ status: 'OK', timestamp: Date.now() }, { headers }),
-			'/render': async (req) => Response.json(await render(await req.json()), { headers }),
+			'/render': async (req) => Response.json(await render(await req.json(), req), { headers }),
 			'/shutdown': () => process.exit(0)
 		},
 		fetch() {
