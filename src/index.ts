@@ -118,7 +118,10 @@ export async function createInertiaApp({
 
 		if (useScriptElementForInitialPage) {
 			head.push(
-				`<script type="application/json" data-page="${e(id)}">${e(JSON.stringify(page))}</script>`
+				`<script type="application/json" data-page="${e(id)}">${JSON.stringify(page)
+					.replace(/</g, '\\u003C')
+					.replace(/\u2028/g, '\\u2028')
+					.replace(/\u2029/g, '\\u2029')}</script>`
 			);
 		}
 
