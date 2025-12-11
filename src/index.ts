@@ -60,6 +60,7 @@ type CreateInertiaAppOptions = {
 				showSpinner?: boolean;
 		  };
 	page?: Page;
+	useScriptElementForInitialPage?: boolean;
 };
 
 export async function createInertiaApp({
@@ -67,13 +68,19 @@ export async function createInertiaApp({
 	resolve,
 	setup,
 	progress,
-	page
+	page,
+	useScriptElementForInitialPage = false
 }: CreateInertiaAppOptions) {
 	const resolveComponent = (name: string) => Promise.resolve(resolve(name));
 	if (BROWSER) {
 		const { router, setupProgress } = await import('@inertiajs/core');
 		const target = document.getElementById(id);
-		const initialPage = page ?? JSON.parse(target?.dataset.page ?? '{}');
+		const initialPage = useScriptElementForInitialPage
+			? JSON.parse(
+					document.querySelector(`script[data-page="${e(id)}"][type="application/json"]`)!
+						.textContent
+				)
+			: JSON.parse(target!.getAttribute('data-page')!);
 		const [initialComponent] = await Promise.all([
 			resolveComponent(initialPage.component),
 			router.decryptHistory().catch(() => {})
@@ -106,9 +113,18 @@ export async function createInertiaApp({
 			}
 		}) as SvelteRenderResult;
 
+		const body = `<div id="${e(id)}"${useScriptElementForInitialPage ? '' : ` data-page="${e(JSON.stringify(page))}"`} data-server-rendered="true">${result.body}</div>`;
+		const head = [result.head];
+
+		if (useScriptElementForInitialPage) {
+			head.push(
+				`<script type="application/json" data-page="${e(id)}">${e(JSON.stringify(page))}</script>`
+			);
+		}
+
 		return {
-			body: `<div id="${e(id)}" data-page="${e(JSON.stringify(page))}" data-server-rendered="true">${result.body}</div>`,
-			head: [result.head]
+			body,
+			head
 		};
 	}
 }
