@@ -27,7 +27,7 @@ export function createBunServer({
 	reusePort,
 	showError = false,
 	render
-}: ServeOptions): Bun.Server {
+}: ServeOptions): Bun.Server<undefined> {
 	if (Bun.semver.satisfies(Bun.version, '<1.2.3')) {
 		throw new Error('Bun version 1.2.3 or higher is required to use this function.');
 	}
@@ -41,7 +41,7 @@ export function createBunServer({
 		unix,
 		routes: {
 			'/health': () => Response.json({ status: 'OK', timestamp: Date.now() }, { headers }),
-			'/render': async (req) => Response.json(await render(await req.json(), req), { headers }),
+			'/render': async (req: Request) => Response.json(await render(await req.json(), req), { headers }),
 			'/shutdown': () => process.exit(0)
 		},
 		fetch() {
@@ -53,14 +53,14 @@ export function createBunServer({
 				{ status: 404, headers }
 			);
 		},
-		error(err) {
+		error(err: any) {
 			console.error(err);
 			return Response.json(
 				{ status: 'ERROR', error: showError ? `${err}` : undefined, timestamp: Date.now() },
 				{ status: 500, headers }
 			);
 		}
-	});
+	} as any);
 	console.log(`Listening on ${server.url.href}`);
 	return server;
 }
