@@ -11,7 +11,7 @@ type FormOptions = Omit<VisitOptions, 'data'>;
 type FormActionOptions = { method?: Method; url?: string | URL } & FormOptions;
 
 export class FormValidationError extends Error {
-	constructor(public errors: Record<string, string | undefined>) {
+	constructor(public errors: Record<string, string | string[] | undefined>) {
 		super('The given data was invalid.');
 	}
 }
@@ -45,6 +45,8 @@ export interface InertiaForm<Data extends FormDataType> {
 	errorsWhere(
 		filter: string | { test(key: string): boolean }
 	): Record<string, string | string[] | undefined>;
+
+	prevalidate(callback: (data: Data, errors: Map<string, string>) => void | Promise<void>): this;
 
 	transform(callback: (data: Data) => object): this;
 
@@ -118,7 +120,8 @@ function use_form(defaults: { value: any }, rememberKey?: string) {
 
 	let cancelToken: { cancel: () => void } | null = null;
 
-	let transform: (data: any) => object = (data: any) => data;
+	let transform: (data: any) => object | Promise<object> = (data: any) => data;
+	let prevalidate: (data: any, errors: Map<string, string>) => void | Promise<void> = () => {};
 
 	let dirty = $derived(!isEqual(data, defaults.value));
 
@@ -151,8 +154,16 @@ function use_form(defaults: { value: any }, rememberKey?: string) {
 		if (!BROWSER) throw new Error('Form can only submit in a browser environment.');
 		if (processing) throw new FormProcessingError();
 		form.store?.();
-		return new Promise<Page>((resolve, reject) => {
-			const payload = transform(cloneDeep(untrack(() => data)));
+		return new Promise<Page>(async (resolve, reject) => {
+			const bag = new Map<string, string>();
+			await prevalidate(cloneDeep(untrack(() => data)), bag);
+			if (bag.size > 0) {
+				errors = Object.fromEntries(bag);
+				wasSuccessful = false;
+				wasFailed = true;
+				return reject(new FormValidationError(errors));
+			}
+			const payload = await transform(cloneDeep(untrack(() => data)));
 			const opts: Omit<VisitOptions, 'method'> = {
 				...options,
 				preserveState: options.preserveState ?? 'errors',
@@ -277,8 +288,12 @@ function use_form(defaults: { value: any }, rememberKey?: string) {
 			errors; // Trigger reactivity
 			return errorsWhere;
 		},
-		transform(callback: (data: any) => object) {
+		transform(callback: (data: any) => object | Promise<object>) {
 			transform = callback;
+			return form;
+		},
+		prevalidate(callback: (data: any, errors: Map<string, string>) => void | Promise<void>) {
+			prevalidate = callback;
 			return form;
 		},
 		reset(...fields: string[]) {
