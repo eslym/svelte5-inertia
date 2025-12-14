@@ -169,7 +169,7 @@ function use_form(defaults: { value: any }, rememberKey?: string) {
 					wasSuccessful = wasFailed = false;
 					errors = {};
 					progress = null;
-					options.onBefore?.(visit);
+					return options.onBefore?.(visit);
 				},
 				onStart(visit) {
 					processing = true;
