@@ -15,6 +15,7 @@ export { default as InertiaContext } from './inertia-context.svelte';
 
 export {
 	context as inertiaContext,
+	context as Inertia,
 	useInertia,
 	useLink,
 	usePage,

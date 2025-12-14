@@ -155,9 +155,11 @@ function use_form(defaults: { value: any }, rememberKey?: string) {
 		if (processing) throw new FormProcessingError();
 		form.store?.();
 		return new Promise<Page>(async (resolve, reject) => {
+			processing = true;
 			const bag = new Map<string, string>();
 			await prevalidate(cloneDeep(untrack(() => data)), bag);
 			if (bag.size > 0) {
+				processing = false;
 				errors = Object.fromEntries(bag);
 				wasSuccessful = false;
 				wasFailed = true;
@@ -180,7 +182,10 @@ function use_form(defaults: { value: any }, rememberKey?: string) {
 					wasSuccessful = wasFailed = false;
 					errors = {};
 					progress = null;
-					return options.onBefore?.(visit);
+					if (options.onBefore?.(visit) === false) {
+						processing = false;
+						return false;
+					}
 				},
 				onStart(visit) {
 					processing = true;
